@@ -59,7 +59,7 @@ function addToRoom(ws, roomId, peerId) {
     console.log(`[房间] 创建 roomId=${roomId}`);
   }
   rooms.get(roomId).add({ ws, peerId });
-  console.log(`[房间] ${peerId} 加入 roomId=${roomId}，当前人数=${rooms.get(roomId).size}`);
+  console.log(`[房间] ${peerId} 加入 roomId=${roomId}，当前人数=${rooms.get(roomId).size}, 总rooms=${rooms.size}`);
 }
 
 function removeFromRoom(ws, roomId, peerId) {
@@ -88,22 +88,50 @@ function getRoomPeerIds(roomId) {
 function startHeartbeatMonitor() {
   setInterval(() => {
     const now = Date.now();
+    console.log(`[心跳检测] 第${Date.now()}ms, 检查${heartbeats.size}个peer, rooms=${rooms.size}`);
     for (const [peerId, lastTs] of heartbeats.entries()) {
-      if (now - lastTs > HEARTBEAT_TIMEOUT) {
+      const diff = now - lastTs;
+      console.log(`[心跳检测] 检查 ${peerId}, 距上次${diff}ms, 超时阈值=${HEARTBEAT_TIMEOUT}ms, 超时=${diff > HEARTBEAT_TIMEOUT}`);
+      if (diff > HEARTBEAT_TIMEOUT) {
         heartbeats.delete(peerId);
-        // 找到该 peer 所在的房间并广播离线
         for (const [roomId, room] of rooms.entries()) {
           for (const entry of room) {
             if (entry.peerId === peerId) {
               broadcast(roomId, { type: 'member-left', peerId }, entry.ws);
               removeFromRoom(entry.ws, roomId, peerId);
-              console.log(`[心跳] ${peerId} 超时离线`);
+              console.log(`[心跳] ${peerId} 超时离线 (diff=${diff}ms)`);
             }
           }
         }
       }
     }
   }, HEARTBEAT_INTERVAL);
+}
+
+/**
+ * 服务端主动心跳广播 - 每 5 秒向所有房间成员推送 server-pong
+ * 解决 nginx 代理导致客户端 ping 无法到达服务端的问题
+ */
+function startServerPongBroadcast() {
+  setInterval(() => {
+    const now = Date.now();
+    let totalSent = 0;
+    for (const [roomId, room] of rooms.entries()) {
+      for (const entry of room) {
+        if (entry.ws.readyState === WebSocket.OPEN) {
+          try {
+            entry.ws.send(JSON.stringify({ type: 'server-pong', ts: now }));
+            totalSent++;
+          } catch (e) {
+            console.error(`[server-pong] 发送失败 ${entry.peerId}: ${e.message}`);
+          }
+        }
+      }
+    }
+    if (totalSent > 0) {
+      console.log(`[server-pong] 广播给 ${totalSent} 个成员`);
+    }
+  }, 5000); // 每 5 秒
 }
 
 // ─── 消息处理 ────────────────────────────────────────────────────────────────
@@ -156,9 +184,9 @@ wss.on('connection', (ws) => {
 
       // ── 心跳 ──────────────────────────────────────────────────────────────
       case 'pong': {
-        if (currentPeerId) {
-          heartbeats.set(currentPeerId, Date.now());
-        }
+        const prev = heartbeats.get(currentPeerId);
+        heartbeats.set(currentPeerId, Date.now());
+        console.log(`[心跳] ${currentPeerId} pong, 前值=${prev} → 新值=${Date.now()}`);
         break;
       }
 
@@ -188,11 +216,12 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    console.log(`[信令] ws.onclose 触发, currentRoomId=${currentRoomId}, currentPeerId=${currentPeerId}, rooms.size=${rooms.size}`);
     if (currentRoomId && currentPeerId) {
       broadcast(currentRoomId, { type: 'member-left', peerId: currentPeerId });
       removeFromRoom(ws, currentRoomId, currentPeerId);
       heartbeats.delete(currentPeerId);
-      console.log(`[信令] ${currentPeerId} WebSocket 断开`);
+      console.log(`[信令] ${currentPeerId} WebSocket 断开, heartbeats now has ${heartbeats.size} entries`);
     }
   });
 
@@ -201,6 +230,7 @@ wss.on('connection', (ws) => {
   });
 });
 
+startServerPongBroadcast();
 startHeartbeatMonitor();
 
 console.log(`[信令服务器] 运行中，等待连接...`);

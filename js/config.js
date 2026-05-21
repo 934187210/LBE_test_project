@@ -9,7 +9,7 @@
  * - setMyPosition / updateMember 中已有 wgs84ToGcj02 转换
  */
 
-export const SIGNALING_SERVER = 'ws://114.55.135.92:8080';
+export const SIGNALING_SERVER = 'wss://114.55.135.92/ws';
 
 export const ICE_SERVERS = [
   // 国内可用 STUN 服务器（按可靠性排序）

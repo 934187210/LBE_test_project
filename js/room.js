@@ -23,9 +23,18 @@ export class Room {
   setRoomId(roomId) { this.roomId = roomId; }
 
   addMember(peerId) {
+    if (this.members.has(peerId)) {
+      console.warn('[Room] addMember 重复忽略:', peerId);
+      return;
+    }
     this.members.set(peerId, { joinedAt: Date.now() });
     this._updateUI();
     showToast(`${peerId} 加入了房间`);
+  }
+
+  clearMembers() {
+    this.members.clear();
+    this._updateUI();
   }
 
   removeMember(peerId) {
@@ -39,7 +48,7 @@ export class Room {
     const avatarsEl = document.getElementById('members-avatars');
     if (!countEl || !avatarsEl) return;
 
-    const total = this.members.size + 1; // +1 自己
+    const total = this.members.size + 1; // members 不含自己，所以 +1
     countEl.textContent = `${total} 人在线`;
 
     // 成员头像 dots

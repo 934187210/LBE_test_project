@@ -49,9 +49,9 @@ export class MeshNetwork {
   // ── 成员变化 ────────────────────────────────────────────────────────────
 
   async _handleMemberJoined(peerId) {
+    console.log('[Mesh] _handleMemberJoined 被调用, peerId:', peerId, 'connections已有:', this.connections.has(peerId));
     if (this.connections.has(peerId)) return;
-    // 我更大 → 等对方发起；我更小 → 主动发 offer（上面 connectToPeers 已处理）
-    // 但如果我是房间里的新来者，connectToPeers 已经建立，这里只做 UI 更新
+    console.log('[Mesh] _handleMemberJoined → 调用 onPeerJoined');
     if (this.onPeerJoined) this.onPeerJoined(peerId);
   }
 
