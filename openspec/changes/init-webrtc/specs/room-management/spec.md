@@ -5,7 +5,7 @@ The system SHALL allow a user to create a room and receive a shareable URL that 
 
 #### Scenario: Room created
 - **WHEN** a user clicks "Create Room"
-- **THEN** the system SHALL generate a unique roomId, write room metadata to Firebase, and display a URL in the format `<origin>?room=<roomId>`
+- **THEN** the system SHALL generate a unique roomId, connect to the WebSocket signaling server, and display a URL in the format `<origin>?room=<roomId>`
 
 ### Requirement: Join room via URL
 The system SHALL allow a user to join an existing room by opening a shared URL.

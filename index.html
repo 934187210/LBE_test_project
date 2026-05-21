@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>LocateRoom</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="bottom-panel">
+    <div id="room-id-display" class="hidden">
+      <span class="label">房间</span>
+      <span id="room-id-text"></span>
+      <button id="copy-link-btn" title="复制分享链接">复制链接</button>
+    </div>
+
+    <div id="members-list">
+      <span id="members-count">0 人在线</span>
+      <div id="members-avatars"></div>
+    </div>
+
+    <div id="action-buttons">
+      <button id="create-room-btn">创建房间</button>
+      <button id="join-room-btn" class="hidden">加入房间</button>
+    </div>
+
+    <div id="status-text"></div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <div id="loading" class="hidden">
+    <div class="spinner"></div>
+    <p id="loading-text">正在连接...</p>
+  </div>
+
+  <script type="module" src="js/app.js?v=20260521t"></script>
+</body>
+</html>

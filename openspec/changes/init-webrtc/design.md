@@ -1,13 +1,13 @@
 ## Context
 
-单页 Web 应用，位置数据必须走 WebRTC DataChannel P2P 传输。信令层使用自建 WebSocket 服务器（可选野狗/LeanCloud/云服务器），静态资源部署到腾讯云 COS。目标：4 人房间、10Hz 位置更新、移动端 H5 可用。
+单页 Web 应用，位置数据必须走 WebRTC DataChannel P2P 传输。信令层使用自建 WebSocket 服务器（可选野狗/LeanCloud/云服务器），静态资源部署到阿里云 OSS。目标：4 人房间、10Hz 位置更新、移动端 H5 可用。
 
 ## Goals / Non-Goals
 
 **Goals:**
 - WebRTC Mesh 全互联，DataChannel 传输位置数据
 - 自建 WebSocket 信令服务器（或国内 BaaS），支持 offer/answer/ICE 交换
-- 腾讯云 COS 静态网站托管
+- 阿里云 OSS 静态网站托管
 - 国内 STUN 服务（绕过 Google 服务限制）
 - Leaflet 地图实时渲染成员位置
 - 断线感知与自动重连
@@ -24,9 +24,8 @@
 
 **D2: WebSocket 信令服务器（国内）**
 选自建 WebSocket 信令服务器。原因：Firebase/Google 服务在国内被限，信令无法建立。实现方式三选一：
-1. **野狗 Wilddog/LeanCloud**（推荐）：国内 BaaS，有免费额度，5 分钟内空闲自动休眠，但信令场景基本不受影响
-2. **自购云服务器**（如腾讯云/阿里云）：最便宜约 20-30 元/月，完全可控
-3. **腾讯云 SCF（Serverless）**：按调用次数计费，信令这种低频场景几乎免费
+1. **自购阿里云 ECS**（推荐）：用户已有，约 20-30 元/月，完全可控，直接部署 WebSocket 服务
+2. **野狗 Wilddog/LeanCloud**：国内 BaaS，有免费额度，5 分钟内空闲自动休眠，信令场景基本不受影响
 
 WebSocket 服务器仅负责转发 offer/answer/ICE 和房间状态，位置数据不经过服务器。
 
@@ -41,7 +40,7 @@ WebSocket 服务器仅负责转发 offer/answer/ICE 和房间状态，位置数�
 
 ## Risks / Trade-offs
 
-- **NAT 穿透失败** → 使用国内 STUN 服务（如腾讯云、网易云信），对称 NAT 可能失败。缓解：测试多网络环境；加分项可加国内 TURN 服务。
+- **NAT 穿透失败** → 使用国内 STUN 服务（阿里云 NAT/STUN、XiGa Xturn 等），对称 NAT 可能失败。缓解：测试多网络环境；加分项可加国内 TURN 服务。
 - **iOS Safari 后台挂起** → 定位停止上报，对方看到位置冻结。缓解：掉线感知（30s 无心跳标记离线）。
 - **WebSocket 信令服务器可用性** → 云服务器/BaaS 故障时无法建联。缓解：心跳检测连接状态，断开后尝试重连。
 - **Mesh 连接建立顺序冲突** → 多人同时加入时 offer/answer 竞争。缓解：按 peerId 字典序决定 initiator，避免双向同时发 offer。
