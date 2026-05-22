@@ -46,6 +46,11 @@ class App {
 
     this.signaling.onRoomMembers = (peerIds) => {
       console.log('[App] onRoomMembers 触发, peerIds:', peerIds);
+      // 把房间现有成员加入 members（这些是已在线的成员，不含自己）
+      for (const pid of peerIds) {
+        console.log('[App] 调用 room.addMember:', pid);
+        this.room.addMember(pid);
+      }
       if (!this.mesh) { console.log('[App] mesh 不存在，跳过 connectToPeers'); return; }
       console.log('[App] 调用 mesh.connectToPeers, peerIds:', peerIds);
       this.mesh.connectToPeers(peerIds);
